@@ -447,6 +447,19 @@ function toDriveStreamCandidates(url) {
   ];
 }
 
+function isMobileDevice() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    return true;
+  }
+  try {
+    return window.matchMedia("(max-width: 820px) and (pointer: coarse)").matches;
+  } catch (e) {
+    return false;
+  }
+}
+
 let playerHintTimer = null;
 
 function ensurePlayerShell() {
@@ -469,32 +482,35 @@ function ensurePlayerShell() {
       <div class="video-player-frame-wrap">
         <div class="video-player-loading" id="videoPlayerLoading" aria-hidden="true">
           <div class="video-player-spinner"></div>
-          <p>Carregando aula…</p>
+          <p id="videoPlayerLoadingText">Carregando aula…</p>
         </div>
         <video
           id="videoPlayerNative"
           class="video-player-native"
           controls
           playsinline
+          webkit-playsinline
           preload="metadata"
           hidden
         ></video>
         <iframe
           id="videoPlayerFrame"
           title="Player de aula"
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-read; clipboard-write"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowfullscreen
           loading="eager"
+          referrerpolicy="no-referrer-when-downgrade"
         ></iframe>
         <div class="video-player-hint" id="videoPlayerHint" hidden>
-          <p>Se o vídeo não aparecer aqui, o Google pode estar bloqueando o embutido. Use <strong>Abrir no Drive</strong> — a área de membros continua aberta atrás.</p>
+          <p id="videoPlayerHintText">Se o vídeo não aparecer, use o botão abaixo.</p>
+          <a id="videoPlayerHintLink" class="btn btn-primary btn-sm video-player-hint-btn" href="#" target="_blank" rel="noopener">Assistir no Drive</a>
         </div>
       </div>
       <div class="video-player-actions">
-        <a id="videoPlayerExternal" class="btn btn-light btn-sm" href="#" target="_blank" rel="noopener">
-          Abrir em nova aba
+        <a id="videoPlayerExternal" class="btn btn-primary btn-sm" href="#" target="_blank" rel="noopener">
+          Assistir no Drive
         </a>
-        <button type="button" class="btn btn-primary btn-sm" data-close-player>Fechar</button>
+        <button type="button" class="btn btn-light btn-sm" data-close-player>Fechar</button>
       </div>
     </div>
   `;
@@ -507,7 +523,6 @@ function ensurePlayerShell() {
   const frame = el.querySelector("#videoPlayerFrame");
   frame.addEventListener("load", () => {
     const loading = document.getElementById("videoPlayerLoading");
-    /* só esconde loading se o iframe for o modo ativo */
     if (loading && !frame.hidden) loading.hidden = true;
   });
 }
@@ -517,16 +532,42 @@ function hideLoading() {
   if (loading) loading.hidden = true;
 }
 
-function showHintSoon() {
+function showLoading(text) {
+  const loading = document.getElementById("videoPlayerLoading");
+  const t = document.getElementById("videoPlayerLoadingText");
+  if (t && text) t.textContent = text;
+  if (loading) loading.hidden = false;
+}
+
+function setPlayerHint(html, { show = true, driveUrl = null } = {}) {
   const hint = document.getElementById("videoPlayerHint");
+  const text = document.getElementById("videoPlayerHintText");
+  const link = document.getElementById("videoPlayerHintLink");
+  if (!hint) return;
+  if (text && html) text.innerHTML = html;
+  if (link && driveUrl) {
+    link.href = driveUrl;
+    link.hidden = false;
+  } else if (link && !driveUrl) {
+    link.hidden = true;
+  }
+  hint.hidden = !show;
+}
+
+function showHintSoon(driveUrl, delayMs = 2800) {
   const shell = document.getElementById("videoPlayer");
   if (playerHintTimer) clearTimeout(playerHintTimer);
   playerHintTimer = setTimeout(() => {
-    if (hint && shell && shell.classList.contains("show")) hint.hidden = false;
-  }, 5000);
+    if (shell && shell.classList.contains("show")) {
+      setPlayerHint(
+        "Se a tela ficou preta, o celular bloqueou o vídeo embutido. Toque em <strong>Assistir no Drive</strong>.",
+        { show: true, driveUrl }
+      );
+    }
+  }, delayMs);
 }
 
-function useIframePlayer(previewUrl) {
+function useIframePlayer(previewUrl, { driveUrl = null, showHintMs = 2800 } = {}) {
   const frame = document.getElementById("videoPlayerFrame");
   const native = document.getElementById("videoPlayerNative");
   if (native) {
@@ -542,14 +583,18 @@ function useIframePlayer(previewUrl) {
       frame.src = previewUrl;
     });
   }
-  showHintSoon();
+  if (driveUrl) showHintSoon(driveUrl, showHintMs);
 }
 
-function playNativeVideo(src, { fallbackPreview } = {}) {
+function playNativeVideo(src, { fallbackDriveUrl = null } = {}) {
   const native = document.getElementById("videoPlayerNative");
   const frame = document.getElementById("videoPlayerFrame");
   if (!native) {
-    if (fallbackPreview) useIframePlayer(fallbackPreview);
+    if (fallbackDriveUrl) {
+      const preview = toDrivePreviewUrl(fallbackDriveUrl);
+      if (preview) useIframePlayer(preview, { driveUrl: fallbackDriveUrl });
+      else window.open(fallbackDriveUrl, "_blank", "noopener");
+    }
     return;
   }
 
@@ -558,6 +603,10 @@ function playNativeVideo(src, { fallbackPreview } = {}) {
     frame.src = "about:blank";
   }
   native.hidden = false;
+  /* atributos críticos no iOS */
+  native.setAttribute("playsinline", "");
+  native.setAttribute("webkit-playsinline", "");
+  native.controls = true;
 
   let settled = false;
   const onReady = () => {
@@ -568,9 +617,10 @@ function playNativeVideo(src, { fallbackPreview } = {}) {
       clearTimeout(playerHintTimer);
       playerHintTimer = null;
     }
-    const hint = document.getElementById("videoPlayerHint");
-    if (hint) hint.hidden = true;
-    native.play().catch(() => {});
+    setPlayerHint("", { show: false });
+    /* no mobile o autoplay com som pode falhar — controls ficam visíveis */
+    const p = native.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
   };
 
   native.onloadeddata = onReady;
@@ -578,29 +628,62 @@ function playNativeVideo(src, { fallbackPreview } = {}) {
   native.onerror = () => {
     if (settled) return;
     settled = true;
-    if (fallbackPreview) useIframePlayer(fallbackPreview);
-    else {
-      hideLoading();
-      const hint = document.getElementById("videoPlayerHint");
-      if (hint) {
-        hint.hidden = false;
-        hint.innerHTML =
-          "<p>Não foi possível carregar este vídeo. Tente abrir em nova aba.</p>";
+    hideLoading();
+    if (fallbackDriveUrl) {
+      const preview = toDrivePreviewUrl(fallbackDriveUrl);
+      if (preview) useIframePlayer(preview, { driveUrl: fallbackDriveUrl, showHintMs: 800 });
+      else {
+        setPlayerHint("Não foi possível carregar este vídeo. Toque em <strong>Assistir no Drive</strong>.", {
+          show: true,
+          driveUrl: fallbackDriveUrl,
+        });
       }
+    } else {
+      setPlayerHint("Não foi possível carregar este vídeo. Toque em <strong>Abrir em nova aba</strong>.", {
+        show: true,
+        driveUrl: src,
+      });
     }
   };
+
+  /* timeout mobile: se não carregar, mostra atalho */
+  setTimeout(() => {
+    if (!settled && native.readyState < 2) {
+      setPlayerHint("Demorando para carregar… Você pode abrir em outra aba.", {
+        show: true,
+        driveUrl: fallbackDriveUrl || src,
+      });
+    }
+  }, 4000);
 
   native.src = src;
   native.load();
 }
 
 function tryNativeThenIframe(url) {
-  const candidates = toDriveStreamCandidates(url);
   const preview = toDrivePreviewUrl(url);
   const native = document.getElementById("videoPlayerNative");
+  const mobile = isMobileDevice();
 
+  /*
+   * No celular, stream direto do Drive quase sempre falha e deixa tela preta.
+   * Vamos direto pro preview + atalho claro "Assistir no Drive".
+   */
+  if (mobile) {
+    if (preview) {
+      useIframePlayer(preview, { driveUrl: url, showHintMs: 1200 });
+      /* esconde loading um pouco depois mesmo se iframe não “loadar” bem */
+      setTimeout(hideLoading, 1600);
+    } else {
+      hideLoading();
+      setPlayerHint("Abra a aula no Drive para assistir no celular.", { show: true, driveUrl: url });
+    }
+    return;
+  }
+
+  const candidates = toDriveStreamCandidates(url);
   if (!native || !candidates.length) {
-    if (preview) useIframePlayer(preview);
+    if (preview) useIframePlayer(preview, { driveUrl: url });
     return;
   }
 
@@ -616,7 +699,7 @@ function tryNativeThenIframe(url) {
       return;
     }
     settled = true;
-    useIframePlayer(preview);
+    useIframePlayer(preview, { driveUrl: url });
   };
 
   if (document.getElementById("videoPlayerFrame")) {
@@ -624,6 +707,8 @@ function tryNativeThenIframe(url) {
     document.getElementById("videoPlayerFrame").src = "about:blank";
   }
   native.hidden = false;
+  native.setAttribute("playsinline", "");
+  native.controls = true;
 
   const onReady = () => {
     if (settled) return;
@@ -633,8 +718,7 @@ function tryNativeThenIframe(url) {
       clearTimeout(playerHintTimer);
       playerHintTimer = null;
     }
-    const hint = document.getElementById("videoPlayerHint");
-    if (hint) hint.hidden = true;
+    setPlayerHint("", { show: false });
     native.play().catch(() => {});
   };
 
@@ -660,25 +744,46 @@ function openPlayer(title, url) {
   const shell = document.getElementById("videoPlayer");
   const titleEl = document.getElementById("videoPlayerTitle");
   const external = document.getElementById("videoPlayerExternal");
-  const loading = document.getElementById("videoPlayerLoading");
-  const hint = document.getElementById("videoPlayerHint");
+  const hintLink = document.getElementById("videoPlayerHintLink");
+  const mobile = isMobileDevice();
+  const local = isLocalVideo(url);
 
   titleEl.textContent = title || "Aula";
   external.href = url;
-  external.textContent = isLocalVideo(url) ? "Abrir em nova aba" : "Abrir no Drive";
-  if (hint) {
-    hint.hidden = true;
-    hint.innerHTML =
-      "<p>Se o vídeo não aparecer aqui, o Google pode estar bloqueando o embutido. Use <strong>Abrir no Drive</strong> — a área de membros continua aberta atrás.</p>";
+  if (local) {
+    external.textContent = "Abrir em nova aba";
+    external.className = "btn btn-light btn-sm";
+  } else {
+    external.textContent = "Assistir no Drive";
+    /* no mobile o Drive embutido falha muito — botão principal em destaque */
+    external.className = mobile ? "btn btn-primary btn-sm" : "btn btn-primary btn-sm";
   }
-  if (loading) loading.hidden = false;
+  if (hintLink) {
+    hintLink.href = url;
+    hintLink.textContent = local ? "Abrir em nova aba" : "Assistir no Drive";
+  }
+
+  setPlayerHint("", { show: false });
+  showLoading(mobile && !local ? "Abrindo aula…" : "Carregando aula…");
 
   shell.hidden = false;
   document.body.classList.add("player-open");
   requestAnimationFrame(() => shell.classList.add("show"));
 
-  if (isLocalVideo(url)) {
+  if (local) {
     playNativeVideo(url);
+  } else if (mobile) {
+    /*
+     * Estratégia mobile Drive:
+     * 1) tenta preview embutido
+     * 2) mostra atalho grande cedo (evita “tela preta sem saída”)
+     * Não força abrir aba sozinho (alguns bloqueiam popup).
+     */
+    tryNativeThenIframe(url);
+    setPlayerHint(
+      "No celular o Google Drive às vezes fica preto dentro do site. Se isso acontecer, toque em <strong>Assistir no Drive</strong>.",
+      { show: true, driveUrl: url }
+    );
   } else {
     tryNativeThenIframe(url);
   }
@@ -691,7 +796,6 @@ function closePlayer() {
   document.body.classList.remove("player-open");
   const frame = document.getElementById("videoPlayerFrame");
   const native = document.getElementById("videoPlayerNative");
-  const hint = document.getElementById("videoPlayerHint");
   if (playerHintTimer) {
     clearTimeout(playerHintTimer);
     playerHintTimer = null;
@@ -709,7 +813,7 @@ function closePlayer() {
         native.load();
         native.hidden = true;
       }
-      if (hint) hint.hidden = true;
+      setPlayerHint("", { show: false });
       shell.hidden = true;
     }
   }, 180);

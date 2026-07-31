@@ -766,18 +766,28 @@ body.player-open {
   left: 0.75rem;
   right: 0.75rem;
   bottom: 0.75rem;
-  z-index: 3;
-  background: rgba(22, 16, 24, 0.94);
-  border: 1px solid rgba(232, 160, 184, 0.28);
-  border-radius: 12px;
-  padding: 0.7rem 0.85rem;
+  z-index: 4;
+  background: rgba(22, 16, 24, 0.96);
+  border: 1px solid rgba(232, 160, 184, 0.35);
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
   color: var(--text-soft);
-  font-size: 0.8rem;
-  line-height: 1.4;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 .video-player-hint[hidden] {
   display: none !important;
+}
+
+.video-player-hint-btn {
+  width: 100%;
+  min-height: 48px;
+  text-align: center;
 }
 
 .video-player-actions {
@@ -787,6 +797,15 @@ body.player-open {
   justify-content: flex-end;
   padding: 0.85rem 1.1rem 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: #161018;
+  position: relative;
+  z-index: 5;
+}
+
+.video-player-top {
+  position: relative;
+  z-index: 5;
+  background: #161018;
 }
 
 .lesson-btn .lesson-n {
@@ -1203,37 +1222,80 @@ body.player-open {
   .video-player {
     padding: 0;
     align-items: stretch;
+    background: #100c10;
+  }
+
+  .video-player-backdrop {
+    background: #100c10;
   }
 
   .video-player-panel {
     width: 100%;
     max-height: 100%;
     border-radius: 0;
+    border: 0;
     display: flex;
     flex-direction: column;
     min-height: 100%;
     min-height: 100dvh;
+    background: #161018;
   }
 
   .video-player-top {
+    flex-shrink: 0;
     padding: 0.85rem 1rem;
     padding-top: max(0.85rem, env(safe-area-inset-top, 0px));
+    background: #1c151c;
+    border-bottom: 1px solid rgba(232, 160, 184, 0.12);
   }
 
+  .video-player-close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .video-player-heading h3 {
+    font-size: 0.95rem;
+  }
+
+  /* Área do vídeo limitada — evita “buraco preto” infinito */
   .video-player-frame-wrap {
-    flex: 1;
-    aspect-ratio: auto;
-    min-height: 42vh;
+    flex: 0 0 auto;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 48vh;
+    min-height: 200px;
+    background: #0a0a0c;
+  }
+
+  .video-player-hint {
+    left: 0.65rem;
+    right: 0.65rem;
+    bottom: 0.65rem;
+    font-size: 0.82rem;
   }
 
   .video-player-actions {
-    padding: 0.85rem 1rem;
-    padding-bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
+    flex-shrink: 0;
+    margin-top: auto;
+    padding: 0.95rem 1rem;
+    padding-bottom: max(1.1rem, calc(env(safe-area-inset-bottom, 0px) + 0.85rem));
     justify-content: stretch;
+    gap: 0.65rem;
+    background: #1c151c;
+    border-top: 1px solid rgba(232, 160, 184, 0.12);
   }
 
   .video-player-actions .btn {
     flex: 1;
+    min-height: 48px;
+    font-size: 0.9rem;
+  }
+
+  .video-player-loading {
+    background: #0a0a0c;
   }
 
   .fab-menu a {
