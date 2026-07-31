@@ -286,7 +286,7 @@ function viewHome() {
   }
 
   if (rest.length) {
-    listHtml += `<p class="section-label">todas as aulas</p>`;
+    listHtml += `<p class="section-label">trilha completa</p>`;
     listHtml += rest.map((item) => renderCard(item, false)).join("");
   }
 
@@ -297,14 +297,14 @@ function viewHome() {
   return `
     <div>
       <header class="hero">
-        <div class="hero-kicker"><span class="dot"></span> tua formação, gravada</div>
+        <div class="hero-kicker"><span class="dot"></span> área de membros · nail design</div>
         <h1 class="hero-title">
-          aqui dentro tu aprende a<br />
-          <span class="accent">fazer unha no nível de salão</span>
+          sua formação completa<br />
+          <span class="accent">pra atender com confiança</span>
         </h1>
         <p class="hero-sub">
-          Toda a formação Nail Design mastigada: trilha por passos, aulas com link direto
-          e as ferramentas que você usa no dia a dia.
+          Trilha organizada do zero ao avançado: cutilagem, gel, alongamentos, nail art,
+          cílios e ferramentas — tudo no lugar certo.
         </p>
       </header>
 
@@ -334,7 +334,7 @@ function viewHome() {
 function renderCard(item, isFeaturedSlot) {
   const featuredClass = item.featured ? "featured" : "";
   const badge = item.featured
-    ? `<span class="thumb-badge">comece por aqui</span>`
+    ? `<span class="thumb-badge">início da trilha</span>`
     : "";
   const target = item.external ? ` target="_blank" rel="noopener"` : "";
   const extra =
@@ -431,7 +431,7 @@ function ensurePlayerShell() {
     <div class="video-player-panel" role="dialog" aria-modal="true" aria-labelledby="videoPlayerTitle">
       <div class="video-player-top">
         <div class="video-player-heading">
-          <span class="video-player-kicker">assistindo agora</span>
+          <span class="video-player-kicker">reproduzindo aula</span>
           <h3 id="videoPlayerTitle">Aula</h3>
         </div>
         <button type="button" class="video-player-close" data-close-player aria-label="Fechar player">✕</button>
