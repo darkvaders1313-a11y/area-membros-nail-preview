@@ -504,6 +504,18 @@ function ensurePlayerShell() {
             loading="eager"
             referrerpolicy="no-referrer-when-downgrade"
           ></iframe>
+          <!-- Fallback limpo no celular: sem iframe do Drive (evita 2 barras) -->
+          <div class="video-player-mobile-cta" id="videoPlayerMobileCta" hidden>
+            <div class="video-player-mobile-cta-icon" aria-hidden="true">▶</div>
+            <p class="video-player-mobile-cta-title" id="videoPlayerMobileCtaTitle">Assistir aula</p>
+            <p class="video-player-mobile-cta-text">
+              No celular o player do Google Drive fica com controles duplicados.
+              Toque abaixo para assistir com uma barra só.
+            </p>
+            <a id="videoPlayerMobileCtaLink" class="btn btn-primary video-player-mobile-cta-btn" href="#" target="_blank" rel="noopener">
+              Assistir agora
+            </a>
+          </div>
           <div class="video-player-hint" id="videoPlayerHint" hidden>
             <p id="videoPlayerHintText">Se o vídeo não aparecer, use o botão abaixo.</p>
             <a id="videoPlayerHintLink" class="btn btn-primary btn-sm video-player-hint-btn" href="#" target="_blank" rel="noopener">Assistir no Drive</a>
@@ -682,29 +694,59 @@ function playNativeVideo(src, { fallbackDriveUrl = null } = {}) {
   native.load();
 }
 
+function hideMobileCta() {
+  const cta = document.getElementById("videoPlayerMobileCta");
+  if (cta) cta.hidden = true;
+}
+
+function showMobileDriveCta(title, driveUrl) {
+  const shell = document.getElementById("videoPlayer");
+  const frame = document.getElementById("videoPlayerFrame");
+  const native = document.getElementById("videoPlayerNative");
+  const cta = document.getElementById("videoPlayerMobileCta");
+  const ctaTitle = document.getElementById("videoPlayerMobileCtaTitle");
+  const ctaLink = document.getElementById("videoPlayerMobileCtaLink");
+  const external = document.getElementById("videoPlayerExternal");
+
+  /* Nunca usa iframe no celular: as 2 barras do Drive embutido bugam a UX */
+  if (frame) {
+    frame.hidden = true;
+    frame.src = "about:blank";
+  }
+  if (native) {
+    native.pause();
+    native.removeAttribute("src");
+    native.load();
+    native.hidden = true;
+  }
+  if (shell) {
+    shell.classList.add("is-mobile-cta");
+    shell.classList.remove("is-iframe", "is-native");
+  }
+  hideLoading();
+  setPlayerHint("", { show: false });
+
+  if (ctaTitle) ctaTitle.textContent = title || "Assistir aula";
+  if (ctaLink) {
+    ctaLink.href = driveUrl;
+    ctaLink.textContent = "Assistir agora";
+  }
+  if (external) {
+    external.href = driveUrl;
+    external.textContent = "Assistir no Drive";
+    external.className = "btn btn-primary btn-sm";
+  }
+  if (cta) cta.hidden = false;
+}
+
 function tryNativeThenIframe(url) {
   const preview = toDrivePreviewUrl(url);
   const native = document.getElementById("videoPlayerNative");
   const frame = document.getElementById("videoPlayerFrame");
   const candidates = toDriveStreamCandidates(url);
-  const mobile = isMobileDevice();
   const shell = document.getElementById("videoPlayer");
 
-  /*
-   * No celular o stream nativo do Drive costuma falhar ou deixar UI bugada.
-   * Vai direto pro preview embutido em tela cheia (área entre header e botões).
-   */
-  if (mobile) {
-    if (preview) {
-      useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
-      setTimeout(hideLoading, 1200);
-    } else {
-      hideLoading();
-      setPlayerHint("Abra a aula no Drive para assistir.", { show: true, driveUrl: url });
-    }
-    return;
-  }
-
+  /* Desktop: tenta nativo; se falhar, iframe do Drive */
   if (!native || !candidates.length) {
     if (preview) useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
     else {
@@ -737,13 +779,14 @@ function tryNativeThenIframe(url) {
     frame.hidden = true;
     frame.src = "about:blank";
   }
+  hideMobileCta();
   native.hidden = false;
   native.setAttribute("playsinline", "");
   native.setAttribute("webkit-playsinline", "");
   native.controls = true;
   if (shell) {
     shell.classList.add("is-native");
-    shell.classList.remove("is-iframe");
+    shell.classList.remove("is-iframe", "is-mobile-cta");
   }
 
   const onReady = () => {
@@ -788,13 +831,13 @@ function openPlayer(title, url) {
 
   titleEl.textContent = title || "Aula";
   external.href = url;
+  hideMobileCta();
   if (local) {
     external.textContent = "Abrir em nova aba";
     external.className = "btn btn-light btn-sm";
   } else {
     external.textContent = "Assistir no Drive";
-    /* no mobile o Drive embutido falha muito — botão principal em destaque */
-    external.className = mobile ? "btn btn-primary btn-sm" : "btn btn-primary btn-sm";
+    external.className = "btn btn-primary btn-sm";
   }
   if (hintLink) {
     hintLink.href = url;
@@ -802,18 +845,82 @@ function openPlayer(title, url) {
   }
 
   setPlayerHint("", { show: false });
-  showLoading(mobile && !local ? "Abrindo aula…" : "Carregando aula…");
-
   shell.hidden = false;
   document.body.classList.add("player-open");
   requestAnimationFrame(() => shell.classList.add("show"));
 
   if (local) {
+    showLoading("Carregando aula…");
     playNativeVideo(url);
-  } else {
-    /* mobile e desktop: sem cartão no meio do vídeo; atalho fica só embaixo */
-    tryNativeThenIframe(url);
+    return;
   }
+
+  /*
+   * Celular + Drive: NÃO usa iframe (2 barras / vídeo cortado).
+   * Tenta stream nativo; se não rolar, tela limpa com 1 botão "Assistir agora".
+   */
+  if (mobile) {
+    const native = document.getElementById("videoPlayerNative");
+    const frame = document.getElementById("videoPlayerFrame");
+    const candidates = toDriveStreamCandidates(url);
+
+    if (frame) {
+      frame.hidden = true;
+      frame.src = "about:blank";
+    }
+
+    if (!native || !candidates.length) {
+      showMobileDriveCta(title, url);
+      return;
+    }
+
+    showLoading("Carregando aula…");
+    let idx = 0;
+    let settled = false;
+
+    const fail = () => {
+      if (settled) return;
+      idx += 1;
+      if (idx < candidates.length) {
+        native.src = candidates[idx];
+        native.load();
+        return;
+      }
+      settled = true;
+      showMobileDriveCta(title, url);
+    };
+
+    native.hidden = false;
+    native.setAttribute("playsinline", "");
+    native.setAttribute("webkit-playsinline", "");
+    native.controls = true;
+    shell.classList.add("is-native");
+    shell.classList.remove("is-iframe", "is-mobile-cta");
+
+    const onReady = () => {
+      if (settled) return;
+      if (native.videoWidth === 0 && native.readyState < 2) return;
+      settled = true;
+      hideLoading();
+      hideMobileCta();
+      native.play().catch(() => {});
+    };
+
+    native.onloadeddata = onReady;
+    native.oncanplay = onReady;
+    native.onloadedmetadata = onReady;
+    native.onerror = fail;
+    setTimeout(() => {
+      if (!settled) fail();
+    }, 2000);
+
+    native.src = candidates[0];
+    native.load();
+    return;
+  }
+
+  showLoading("Carregando aula…");
+  tryNativeThenIframe(url);
 }
 
 function closePlayer() {
