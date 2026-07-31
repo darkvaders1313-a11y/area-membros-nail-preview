@@ -480,30 +480,34 @@ function ensurePlayerShell() {
         <button type="button" class="video-player-close" data-close-player aria-label="Fechar player">✕</button>
       </div>
       <div class="video-player-frame-wrap">
-        <div class="video-player-loading" id="videoPlayerLoading" aria-hidden="true">
-          <div class="video-player-spinner"></div>
-          <p id="videoPlayerLoadingText">Carregando aula…</p>
-        </div>
-        <video
-          id="videoPlayerNative"
-          class="video-player-native"
-          controls
-          playsinline
-          webkit-playsinline
-          preload="metadata"
-          hidden
-        ></video>
-        <iframe
-          id="videoPlayerFrame"
-          title="Player de aula"
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowfullscreen
-          loading="eager"
-          referrerpolicy="no-referrer-when-downgrade"
-        ></iframe>
-        <div class="video-player-hint" id="videoPlayerHint" hidden>
-          <p id="videoPlayerHintText">Se o vídeo não aparecer, use o botão abaixo.</p>
-          <a id="videoPlayerHintLink" class="btn btn-primary btn-sm video-player-hint-btn" href="#" target="_blank" rel="noopener">Assistir no Drive</a>
+        <div class="video-player-stage">
+          <div class="video-player-loading" id="videoPlayerLoading" aria-hidden="true">
+            <div class="video-player-spinner"></div>
+            <p id="videoPlayerLoadingText">Carregando aula…</p>
+          </div>
+          <video
+            id="videoPlayerNative"
+            class="video-player-native"
+            controls
+            playsinline
+            webkit-playsinline
+            preload="metadata"
+            controlslist="nodownload"
+            hidden
+          ></video>
+          <iframe
+            id="videoPlayerFrame"
+            class="video-player-frame"
+            title="Player de aula"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowfullscreen
+            loading="eager"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
+          <div class="video-player-hint" id="videoPlayerHint" hidden>
+            <p id="videoPlayerHintText">Se o vídeo não aparecer, use o botão abaixo.</p>
+            <a id="videoPlayerHintLink" class="btn btn-primary btn-sm video-player-hint-btn" href="#" target="_blank" rel="noopener">Assistir no Drive</a>
+          </div>
         </div>
       </div>
       <div class="video-player-actions">
@@ -580,11 +584,16 @@ function showHintSoon(driveUrl, delayMs = 2800) {
 function useIframePlayer(previewUrl, { driveUrl = null, showHintMs = 0 } = {}) {
   const frame = document.getElementById("videoPlayerFrame");
   const native = document.getElementById("videoPlayerNative");
+  const shell = document.getElementById("videoPlayer");
   if (native) {
     native.pause();
     native.removeAttribute("src");
     native.load();
     native.hidden = true;
+  }
+  if (shell) {
+    shell.classList.add("is-iframe");
+    shell.classList.remove("is-native");
   }
   /* limpa aviso do meio — o botão de baixo já basta */
   setPlayerHint("", { show: false });
@@ -676,27 +685,23 @@ function playNativeVideo(src, { fallbackDriveUrl = null } = {}) {
 function tryNativeThenIframe(url) {
   const preview = toDrivePreviewUrl(url);
   const native = document.getElementById("videoPlayerNative");
+  const frame = document.getElementById("videoPlayerFrame");
+  const candidates = toDriveStreamCandidates(url);
   const mobile = isMobileDevice();
+  const shell = document.getElementById("videoPlayer");
 
   /*
-   * No celular, stream direto do Drive quase sempre falha e deixa tela preta.
-   * Vamos direto pro preview + atalho claro "Assistir no Drive".
+   * Prioriza <video> nativo (1 linha do tempo do celular/navegador).
+   * O iframe do Drive no mobile costuma mostrar 2 barras de progresso.
    */
-  if (mobile) {
+  if (!native || !candidates.length) {
     if (preview) {
-      /* sem overlay no meio — botões de baixo (Assistir no Drive / Fechar) já resolvem */
       useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
-      setTimeout(hideLoading, 1600);
+      if (mobile) setTimeout(hideLoading, 1600);
     } else {
       hideLoading();
-      setPlayerHint("Abra a aula no Drive para assistir no celular.", { show: true, driveUrl: url });
+      setPlayerHint("Abra a aula no Drive para assistir.", { show: true, driveUrl: url });
     }
-    return;
-  }
-
-  const candidates = toDriveStreamCandidates(url);
-  if (!native || !candidates.length) {
-    if (preview) useIframePlayer(preview, { driveUrl: url });
     return;
   }
 
@@ -712,19 +717,29 @@ function tryNativeThenIframe(url) {
       return;
     }
     settled = true;
-    useIframePlayer(preview, { driveUrl: url });
+    /* fallback: iframe Drive (pode ter UI dupla do Google) */
+    if (preview) useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
+    else {
+      hideLoading();
+      setPlayerHint("Abra a aula no Drive para assistir.", { show: true, driveUrl: url });
+    }
   };
 
-  if (document.getElementById("videoPlayerFrame")) {
-    document.getElementById("videoPlayerFrame").hidden = true;
-    document.getElementById("videoPlayerFrame").src = "about:blank";
+  if (frame) {
+    frame.hidden = true;
+    frame.src = "about:blank";
   }
   native.hidden = false;
   native.setAttribute("playsinline", "");
+  native.setAttribute("webkit-playsinline", "");
   native.controls = true;
+  if (shell) shell.classList.add("is-native");
+  if (shell) shell.classList.remove("is-iframe");
 
   const onReady = () => {
     if (settled) return;
+    /* só aceita se tiver dados de vídeo de verdade */
+    if (native.readyState < 2 && native.videoWidth === 0) return;
     settled = true;
     hideLoading();
     if (playerHintTimer) {
@@ -737,11 +752,12 @@ function tryNativeThenIframe(url) {
 
   native.onloadeddata = onReady;
   native.oncanplay = onReady;
+  native.onloadedmetadata = onReady;
   native.onerror = failToNext;
 
   setTimeout(() => {
-    if (!settled && native.readyState < 2) failToNext();
-  }, 2500);
+    if (!settled) failToNext();
+  }, mobile ? 2200 : 2500);
 
   native.src = candidates[0];
   native.load();
