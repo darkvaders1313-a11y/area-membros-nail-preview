@@ -52,12 +52,15 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   font-family: var(--font);
   color: var(--text);
   min-height: 100vh;
+  min-height: 100dvh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   background: var(--bg);
@@ -66,11 +69,14 @@ body {
     radial-gradient(ellipse 60% 40% at 100% 10%, rgba(212, 165, 116, 0.12), transparent 50%),
     radial-gradient(ellipse 50% 35% at 50% 100%, rgba(92, 61, 110, 0.14), transparent 55%);
   background-attachment: fixed;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: rgba(232, 160, 184, 0.15);
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  -webkit-tap-highlight-color: rgba(232, 160, 184, 0.15);
 }
 
 button {
@@ -79,13 +85,20 @@ button {
   background: none;
   border: none;
   cursor: pointer;
+  -webkit-tap-highlight-color: rgba(232, 160, 184, 0.15);
+  touch-action: manipulation;
 }
 
 .page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
   padding: 2rem 1.1rem 4.5rem;
+  padding-top: max(2rem, env(safe-area-inset-top, 0px));
+  padding-right: max(1.1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: max(4.5rem, calc(env(safe-area-inset-bottom, 0px) + 3rem));
+  padding-left: max(1.1rem, env(safe-area-inset-left, 0px));
 }
 
 #app {
@@ -575,6 +588,7 @@ button {
   gap: 0.75rem;
   align-items: center;
   width: 100%;
+  min-height: 52px;
   text-align: left;
   background: var(--card);
   border: 1px solid var(--card-border);
@@ -775,21 +789,6 @@ body.player-open {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-@media (max-width: 560px) {
-  .video-player {
-    padding: 0.5rem;
-    align-items: flex-end;
-  }
-
-  .video-player-panel {
-    border-radius: 18px 18px 14px 14px;
-  }
-
-  .video-player-heading h3 {
-    font-size: 0.95rem;
-  }
-}
-
 .lesson-btn .lesson-n {
   width: 36px;
   height: 36px;
@@ -809,14 +808,15 @@ body.player-open {
 }
 
 .lesson-btn .play {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 12px;
   background: linear-gradient(135deg, var(--accent), var(--gold));
   color: #1a0e14;
   display: grid;
   place-items: center;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -831,12 +831,13 @@ body.player-open {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 4.5rem;
-  padding: 0.45rem 0.75rem;
-  border-radius: 10px;
+  min-width: 4.75rem;
+  min-height: 40px;
+  padding: 0.5rem 0.85rem;
+  border-radius: 12px;
   background: linear-gradient(135deg, var(--accent), var(--gold));
   color: #1a0e14;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -933,7 +934,7 @@ body.player-open {
 
 /* ---------- FAB (menu flutuante) ---------- */
 .page.has-fab {
-  padding-bottom: 6.5rem;
+  padding-bottom: max(7.5rem, calc(env(safe-area-inset-bottom, 0px) + 6.5rem));
 }
 
 .fab-backdrop {
@@ -954,9 +955,9 @@ body.player-open {
 .fab-wrap {
   position: fixed;
   left: 50%;
-  bottom: 1.25rem;
+  bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.65rem));
   transform: translateX(-50%);
-  width: min(100% - 2rem, 420px);
+  width: min(calc(100% - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)), 420px);
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -1008,6 +1009,7 @@ body.player-open {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
+  min-height: 52px;
   background: linear-gradient(135deg, var(--accent), var(--gold));
   color: #1a0e14;
   font-weight: 800;
@@ -1022,6 +1024,8 @@ body.player-open {
 
 .fab-more {
   width: 52px;
+  min-width: 52px;
+  min-height: 52px;
   border-radius: 14px;
   background: var(--card);
   border: 1px solid var(--card-border);
@@ -1030,21 +1034,90 @@ body.player-open {
   place-items: center;
 }
 
+/* Só anima hover em aparelhos com mouse de verdade */
+@media (hover: hover) and (pointer: fine) {
+  .lesson-card:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (hover: none) {
+  .lesson-card:hover {
+    transform: none;
+  }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 560px) {
   .page {
-    padding: 1.35rem 0.85rem 4.5rem;
+    padding: 1.15rem 0.85rem 5.5rem;
+    padding-top: max(1.15rem, env(safe-area-inset-top, 0px));
+    padding-right: max(0.85rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(5.5rem, calc(env(safe-area-inset-bottom, 0px) + 5rem));
+    padding-left: max(0.85rem, env(safe-area-inset-left, 0px));
+  }
+
+  .page.has-fab {
+    padding-bottom: max(8.25rem, calc(env(safe-area-inset-bottom, 0px) + 7.25rem));
+  }
+
+  .hero {
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-kicker {
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    max-width: 100%;
+  }
+
+  .hero-title {
+    font-size: clamp(1.75rem, 8.5vw, 2.35rem);
+    line-height: 1.1;
+  }
+
+  .hero-sub {
+    font-size: 0.92rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .search-wrap input {
+    font-size: 1rem; /* evita zoom automático no iOS */
+    min-height: 48px;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+  }
+
+  .filters {
+    gap: 0.45rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .chip {
+    min-height: 40px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.78rem;
   }
 
   .lesson-card {
-    grid-template-columns: 96px 1fr;
-    gap: 0.75rem;
+    grid-template-columns: 92px 1fr;
+    gap: 0.7rem;
     padding: 0.55rem;
+    border-radius: 16px;
   }
 
   .lesson-card .thumb {
-    min-height: 96px;
-    padding: 0.5rem;
+    min-height: 100px;
+  }
+
+  .lesson-card .thumb-overlay {
+    min-height: 100px;
+    padding: 0.5rem 0.55rem;
+  }
+
+  .lesson-card .thumb-title {
+    font-size: 0.62rem;
+    max-width: 70%;
   }
 
   .lesson-card .thumb-icon {
@@ -1054,14 +1127,179 @@ body.player-open {
   .lesson-card h2,
   .lesson-card .card-title {
     font-size: 0.95rem;
+    line-height: 1.25;
   }
 
   .lesson-card p.desc {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     -webkit-line-clamp: 2;
+    margin-bottom: 0.4rem;
+  }
+
+  .meta {
+    font-size: 0.72rem;
+  }
+
+  .cat-label {
+    font-size: 0.62rem;
+  }
+
+  .lesson-btn {
+    grid-template-columns: 42px 1fr auto;
+    gap: 0.65rem;
+    min-height: 56px;
+    padding: 0.8rem 0.85rem;
+  }
+
+  .lesson-btn .lesson-n {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lesson-btn .name {
+    font-size: 0.9rem;
+    line-height: 1.3;
+  }
+
+  .lesson-btn .play,
+  .lesson-btn .dl {
+    min-height: 44px;
+  }
+
+  .lesson-btn .play {
+    width: 44px;
+    height: 44px;
+  }
+
+  .lesson-btn .dl {
+    min-width: 5rem;
+    padding: 0.55rem 0.9rem;
+  }
+
+  .back {
+    min-height: 44px;
+    padding: 0.55rem 0.85rem 0.55rem 0.55rem;
+    margin-bottom: 1rem;
+  }
+
+  .tip {
+    padding: 0.85rem 0.95rem;
+    font-size: 0.86rem;
+  }
+
+  .page-head h1 {
+    font-size: clamp(1.45rem, 6.5vw, 1.85rem);
+  }
+
+  .tool-btn {
+    min-height: 56px;
+    padding: 1rem;
+  }
+
+  .btn {
+    min-height: 48px;
+  }
+
+  .video-player {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .video-player-panel {
+    width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    min-height: 100dvh;
+  }
+
+  .video-player-top {
+    padding: 0.85rem 1rem;
+    padding-top: max(0.85rem, env(safe-area-inset-top, 0px));
+  }
+
+  .video-player-frame-wrap {
+    flex: 1;
+    aspect-ratio: auto;
+    min-height: 42vh;
+  }
+
+  .video-player-actions {
+    padding: 0.85rem 1rem;
+    padding-bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
+    justify-content: stretch;
+  }
+
+  .video-player-actions .btn {
+    flex: 1;
+  }
+
+  .fab-menu a {
+    min-height: 48px;
+    padding: 0.85rem 1rem;
+  }
+
+  .footer-note {
+    font-size: 0.78rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Celulares bem estreitos: card empilhado (miniatura em cima) */
+@media (max-width: 380px) {
+  .lesson-card {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .lesson-card .thumb {
+    min-height: 150px;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+  }
+
+  .lesson-card .thumb-overlay {
+    min-height: 150px;
+  }
+
+  .lesson-card .thumb-title {
+    max-width: 55%;
+    font-size: 0.72rem;
+  }
+
+  .lesson-card .body {
+    padding: 0 0.15rem 0.15rem;
   }
 
   .hero-title {
-    font-size: clamp(1.85rem, 9vw, 2.4rem);
+    font-size: clamp(1.6rem, 9vw, 2rem);
+  }
+
+  .chip {
+    font-size: 0.74rem;
+  }
+}
+
+/* Landscape mobile: player e padding */
+@media (max-height: 480px) and (orientation: landscape) {
+  .video-player-panel {
+    min-height: 100%;
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .video-player-frame-wrap {
+    min-height: 55vh;
+    aspect-ratio: 16 / 9;
+  }
+
+  .page {
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+  }
+
+  .hero-title {
+    font-size: 1.55rem;
   }
 }
