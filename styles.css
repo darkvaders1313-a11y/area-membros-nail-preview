@@ -1231,7 +1231,8 @@ body.player-open {
 
   .video-player-panel {
     width: 100%;
-    max-height: 100%;
+    height: 100%;
+    max-height: 100dvh;
     border-radius: 0;
     border: 0;
     display: flex;
@@ -1239,12 +1240,13 @@ body.player-open {
     min-height: 100%;
     min-height: 100dvh;
     background: #161018;
+    overflow: hidden;
   }
 
   .video-player-top {
-    flex-shrink: 0;
-    padding: 0.85rem 1rem;
-    padding-top: max(0.85rem, env(safe-area-inset-top, 0px));
+    flex: 0 0 auto;
+    padding: 0.75rem 1rem;
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
     background: #1c151c;
     border-bottom: 1px solid rgba(232, 160, 184, 0.12);
   }
@@ -1257,17 +1259,32 @@ body.player-open {
   }
 
   .video-player-heading h3 {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
 
-  /* Área do vídeo limitada — evita “buraco preto” infinito */
+  /*
+   * Vídeo ocupa TODO o espaço entre cabeçalho e botões.
+   * Antes max-height 48vh cortava o player do Drive no meio.
+   */
   .video-player-frame-wrap {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     width: 100%;
-    aspect-ratio: 16 / 9;
-    max-height: 48vh;
-    min-height: 200px;
-    background: #0a0a0c;
+    min-height: 0;
+    height: auto;
+    aspect-ratio: auto;
+    max-height: none;
+    position: relative;
+    background: #000;
+  }
+
+  .video-player-frame-wrap iframe,
+  .video-player-native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: contain;
   }
 
   .video-player-hint {
@@ -1278,10 +1295,10 @@ body.player-open {
   }
 
   .video-player-actions {
-    flex-shrink: 0;
-    margin-top: auto;
-    padding: 0.95rem 1rem;
-    padding-bottom: max(1.1rem, calc(env(safe-area-inset-bottom, 0px) + 0.85rem));
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: 0.85rem 1rem;
+    padding-bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
     justify-content: stretch;
     gap: 0.65rem;
     background: #1c151c;
@@ -1349,12 +1366,28 @@ body.player-open {
   .video-player-panel {
     min-height: 100%;
     max-height: 100dvh;
-    overflow-y: auto;
+    overflow: hidden;
   }
 
   .video-player-frame-wrap {
-    min-height: 55vh;
-    aspect-ratio: 16 / 9;
+    flex: 1 1 auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    max-height: none;
+  }
+
+  .video-player-top {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .video-player-heading .video-player-kicker {
+    display: none;
+  }
+
+  .video-player-actions {
+    padding-top: 0.5rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
   }
 
   .page {
