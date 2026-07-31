@@ -412,7 +412,22 @@ function isLocalVideo(url) {
   );
 }
 
+function isPdfSession(s) {
+  if (!s) return false;
+  if (s.type === "pdf" || s.format === "pdf") return true;
+  const link = String(s.link || "");
+  if (/\.pdf(\?|#|$)/i.test(link)) return true;
+  return false;
+}
+
+function toDriveDownloadUrl(url) {
+  const id = extractDriveFileId(url);
+  if (!id) return url;
+  return `https://drive.google.com/uc?export=download&id=${id}`;
+}
+
 function isPlayableMedia(url) {
+  if (/\.pdf(\?|#|$)/i.test(String(url || ""))) return false;
   return isPlayableDriveLink(url) || isLocalVideo(url);
 }
 
@@ -701,6 +716,18 @@ function closePlayer() {
 }
 
 function lessonBtn(s) {
+  /* PDF: botão Baixar (não abre player de vídeo) */
+  if (isPdfSession(s)) {
+    const href = toDriveDownloadUrl(s.link) || s.link;
+    return `
+      <a class="lesson-btn lesson-btn-pdf" href="${escapeAttr(href)}" target="_blank" rel="noopener" download>
+        <span class="lesson-n lesson-n-pdf">PDF</span>
+        <span class="name">${escapeHtml(s.title)}</span>
+        <span class="dl">Baixar</span>
+      </a>
+    `;
+  }
+
   const playable = isPlayableMedia(s.link);
   if (playable) {
     return `

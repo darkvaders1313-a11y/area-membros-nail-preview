@@ -739,13 +739,15 @@ const MODULES = {
         "n": 2,
         "title": "Ideias de Fundos para as suas fotos",
         "focus": "Fotografia e apresentação do trabalho.",
-        "link": "https://drive.google.com/file/d/1HFPNXvVkk_4MURJQIlr3ZTaLWWM5CLqU/view?usp=drive_link"
+        "link": "https://drive.google.com/file/d/1HFPNXvVkk_4MURJQIlr3ZTaLWWM5CLqU/view?usp=drive_link",
+        "type": "pdf"
       },
       {
         "n": 3,
         "title": "Passo a passo como tirar fotos lindas",
         "focus": "Fotografia e apresentação do trabalho.",
-        "link": "https://drive.google.com/file/d/1wPBVzcHay0rS48LCWNCvbSXgpB5pWByQ/view?usp=drive_link"
+        "link": "https://drive.google.com/file/d/1wPBVzcHay0rS48LCWNCvbSXgpB5pWByQ/view?usp=drive_link",
+        "type": "pdf"
       }
     ]
   },
@@ -902,6 +904,7 @@ const MODULES = {
     "phase": 1,
     "level": "Rápido",
     "link": "https://drive.google.com/file/d/1PhqldldHPKjlSHK3Vamlo0v22Ixlthcd/view?usp=drive_link",
+        "type": "pdf",
     "whatYouGet": "Modelo de ficha de anamnese para atendimento.",
     "startHere": "Abra o arquivo e use no próximo atendimento.",
     "sessions": [
@@ -909,7 +912,8 @@ const MODULES = {
         "n": 1,
         "title": "Ficha de Anamnese",
         "focus": "Preencha com a cliente: alergias, histórico e observações.",
-        "link": "https://drive.google.com/file/d/1PhqldldHPKjlSHK3Vamlo0v22Ixlthcd/view?usp=drive_link"
+        "link": "https://drive.google.com/file/d/1PhqldldHPKjlSHK3Vamlo0v22Ixlthcd/view?usp=drive_link",
+        "type": "pdf"
       }
     ],
     "time": "1 aula"
@@ -1118,7 +1122,8 @@ const MODULES = {
         "n": 1,
         "title": "Fornecedores Nail Designer",
         "focus": "Negócio, preço e custos.",
-        "link": "https://drive.google.com/file/d/19im_DSWK0QT6CPEAYoCyHnpaabOEb5o1/view?usp=drive_link"
+        "link": "https://drive.google.com/file/d/19im_DSWK0QT6CPEAYoCyHnpaabOEb5o1/view?usp=drive_link",
+        "type": "pdf"
       }
     ]
   },
