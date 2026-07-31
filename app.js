@@ -691,14 +691,23 @@ function tryNativeThenIframe(url) {
   const shell = document.getElementById("videoPlayer");
 
   /*
-   * Prioriza <video> nativo (1 linha do tempo do celular/navegador).
-   * O iframe do Drive no mobile costuma mostrar 2 barras de progresso.
+   * No celular o stream nativo do Drive costuma falhar ou deixar UI bugada.
+   * Vai direto pro preview embutido em tela cheia (área entre header e botões).
    */
-  if (!native || !candidates.length) {
+  if (mobile) {
     if (preview) {
       useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
-      if (mobile) setTimeout(hideLoading, 1600);
+      setTimeout(hideLoading, 1200);
     } else {
+      hideLoading();
+      setPlayerHint("Abra a aula no Drive para assistir.", { show: true, driveUrl: url });
+    }
+    return;
+  }
+
+  if (!native || !candidates.length) {
+    if (preview) useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
+    else {
       hideLoading();
       setPlayerHint("Abra a aula no Drive para assistir.", { show: true, driveUrl: url });
     }
@@ -717,7 +726,6 @@ function tryNativeThenIframe(url) {
       return;
     }
     settled = true;
-    /* fallback: iframe Drive (pode ter UI dupla do Google) */
     if (preview) useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
     else {
       hideLoading();
@@ -733,12 +741,13 @@ function tryNativeThenIframe(url) {
   native.setAttribute("playsinline", "");
   native.setAttribute("webkit-playsinline", "");
   native.controls = true;
-  if (shell) shell.classList.add("is-native");
-  if (shell) shell.classList.remove("is-iframe");
+  if (shell) {
+    shell.classList.add("is-native");
+    shell.classList.remove("is-iframe");
+  }
 
   const onReady = () => {
     if (settled) return;
-    /* só aceita se tiver dados de vídeo de verdade */
     if (native.readyState < 2 && native.videoWidth === 0) return;
     settled = true;
     hideLoading();
@@ -757,7 +766,7 @@ function tryNativeThenIframe(url) {
 
   setTimeout(() => {
     if (!settled) failToNext();
-  }, mobile ? 2200 : 2500);
+  }, 2500);
 
   native.src = candidates[0];
   native.load();

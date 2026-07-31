@@ -706,19 +706,14 @@ body.player-open {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
 }
 
-/* Caixa 16:9 — evita o player do Drive “esticar” e mostrar 2 linhas do tempo */
 .video-player-stage {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 16 / 9;
   background: #000;
   overflow: hidden;
 }
@@ -746,8 +741,11 @@ body.player-open {
   display: none !important;
 }
 
-/* Nativo: uma barra de controle só (do navegador) */
 .video-player.is-native .video-player-frame {
+  display: none !important;
+}
+
+.video-player.is-iframe .video-player-native {
   display: none !important;
 }
 
@@ -1286,8 +1284,8 @@ body.player-open {
   }
 
   /*
-   * Área entre cabeçalho e botões: preenche o espaço.
-   * O stage interno fica 16:9 centralizado (1 linha do tempo mais limpa).
+   * Mobile: vídeo usa TODA a área entre título e botões.
+   * Sem forçar 16:9 (isso cortava o player do Drive embaixo).
    */
   .video-player-frame-wrap {
     flex: 1 1 auto;
@@ -1298,20 +1296,16 @@ body.player-open {
     max-height: none;
     position: relative;
     background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
   }
 
   .video-player-stage {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    max-width: 100%;
-    /* ocupa a largura; altura limitada pela área disponível, sempre 16:9 */
-    aspect-ratio: 16 / 9;
-    max-height: 100%;
-    height: auto;
-    position: relative;
-    flex: 0 1 auto;
+    height: 100%;
+    max-height: none;
+    aspect-ratio: auto;
   }
 
   .video-player-frame-wrap iframe,
@@ -1322,15 +1316,25 @@ body.player-open {
     width: 100%;
     height: 100%;
     max-height: none;
+    border: 0;
     object-fit: contain;
   }
 
-  /* Nativo no mobile: preenche bem a área com uma barra só */
-  .video-player.is-native .video-player-stage {
-    width: 100%;
-    height: 100%;
-    max-height: 100%;
-    aspect-ratio: auto;
+  /* Garante que o iframe do Drive preencha sem “zoom” cortando embaixo */
+  .video-player.is-iframe .video-player-frame {
+    object-fit: unset;
+  }
+
+  .video-player-top {
+    /* um pouco mais compacto pra sobrar altura pro vídeo */
+    padding-top: max(0.55rem, env(safe-area-inset-top, 0px));
+    padding-bottom: 0.55rem;
+  }
+
+  .video-player-actions {
+    /* barra de ações fora do vídeo — não cobre a linha do tempo do Drive */
+    flex-shrink: 0;
+    z-index: 6;
   }
 
   .video-player-hint {
@@ -1415,16 +1419,18 @@ body.player-open {
     overflow: hidden;
   }
 
-  .video-player-frame-wrap {
+  .video-player-frame-wrap,
+  .video-player-stage {
     flex: 1 1 auto;
     min-height: 0;
     aspect-ratio: auto;
     max-height: none;
+    height: 100%;
   }
 
   .video-player-top {
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
   }
 
   .video-player-heading .video-player-kicker {
@@ -1432,8 +1438,8 @@ body.player-open {
   }
 
   .video-player-actions {
-    padding-top: 0.5rem;
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    padding-top: 0.45rem;
+    padding-bottom: max(0.45rem, env(safe-area-inset-bottom, 0px));
   }
 
   .page {
