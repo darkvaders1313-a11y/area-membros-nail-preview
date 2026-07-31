@@ -828,6 +828,7 @@ function openPlayer(title, url) {
   const hintLink = document.getElementById("videoPlayerHintLink");
   const mobile = isMobileDevice();
   const local = isLocalVideo(url);
+  const preview = toDrivePreviewUrl(url);
 
   titleEl.textContent = title || "Aula";
   external.href = url;
@@ -836,12 +837,12 @@ function openPlayer(title, url) {
     external.textContent = "Abrir em nova aba";
     external.className = "btn btn-light btn-sm";
   } else {
-    external.textContent = "Assistir no Drive";
-    external.className = "btn btn-primary btn-sm";
+    external.textContent = "Abrir no Drive";
+    external.className = "btn btn-light btn-sm";
   }
   if (hintLink) {
     hintLink.href = url;
-    hintLink.textContent = local ? "Abrir em nova aba" : "Assistir no Drive";
+    hintLink.textContent = local ? "Abrir em nova aba" : "Abrir no Drive";
   }
 
   setPlayerHint("", { show: false });
@@ -849,6 +850,7 @@ function openPlayer(title, url) {
   document.body.classList.add("player-open");
   requestAnimationFrame(() => shell.classList.add("show"));
 
+  /* Aula local (.mp4 na pasta videos/): player nativo */
   if (local) {
     showLoading("Carregando aula…");
     playNativeVideo(url);
@@ -856,66 +858,18 @@ function openPlayer(title, url) {
   }
 
   /*
-   * Celular + Drive: NÃO usa iframe (2 barras / vídeo cortado).
-   * Tenta stream nativo; se não rolar, tela limpa com 1 botão "Assistir agora".
+   * Drive no celular: abre o vídeo embutido NA HORA (iframe).
+   * Sem tela intermediária "Assistir agora".
+   * (As barras do player são do Google — não dá pra remover de fora.)
    */
   if (mobile) {
-    const native = document.getElementById("videoPlayerNative");
-    const frame = document.getElementById("videoPlayerFrame");
-    const candidates = toDriveStreamCandidates(url);
-
-    if (frame) {
-      frame.hidden = true;
-      frame.src = "about:blank";
-    }
-
-    if (!native || !candidates.length) {
+    if (preview) {
+      showLoading("Carregando aula…");
+      useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
+      setTimeout(hideLoading, 1400);
+    } else {
       showMobileDriveCta(title, url);
-      return;
     }
-
-    showLoading("Carregando aula…");
-    let idx = 0;
-    let settled = false;
-
-    const fail = () => {
-      if (settled) return;
-      idx += 1;
-      if (idx < candidates.length) {
-        native.src = candidates[idx];
-        native.load();
-        return;
-      }
-      settled = true;
-      showMobileDriveCta(title, url);
-    };
-
-    native.hidden = false;
-    native.setAttribute("playsinline", "");
-    native.setAttribute("webkit-playsinline", "");
-    native.controls = true;
-    shell.classList.add("is-native");
-    shell.classList.remove("is-iframe", "is-mobile-cta");
-
-    const onReady = () => {
-      if (settled) return;
-      if (native.videoWidth === 0 && native.readyState < 2) return;
-      settled = true;
-      hideLoading();
-      hideMobileCta();
-      native.play().catch(() => {});
-    };
-
-    native.onloadeddata = onReady;
-    native.oncanplay = onReady;
-    native.onloadedmetadata = onReady;
-    native.onerror = fail;
-    setTimeout(() => {
-      if (!settled) fail();
-    }, 2000);
-
-    native.src = candidates[0];
-    native.load();
     return;
   }
 
