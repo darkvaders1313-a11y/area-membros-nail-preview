@@ -426,6 +426,13 @@ function toDriveDownloadUrl(url) {
   return `https://drive.google.com/uc?export=download&id=${id}`;
 }
 
+/** Link limpo pra assistir no Drive (abre no app/site do Google) */
+function toDriveWatchUrl(url) {
+  const id = extractDriveFileId(url);
+  if (!id) return url;
+  return `https://drive.google.com/file/d/${id}/view`;
+}
+
 function isPlayableMedia(url) {
   if (/\.pdf(\?|#|$)/i.test(String(url || ""))) return false;
   return isPlayableDriveLink(url) || isLocalVideo(url);
@@ -908,7 +915,7 @@ function closePlayer() {
 }
 
 function lessonBtn(s) {
-  /* PDF: botão Baixar (não abre player de vídeo) */
+  /* PDF: botão Baixar */
   if (isPdfSession(s)) {
     const href = toDriveDownloadUrl(s.link) || s.link;
     return `
@@ -920,8 +927,22 @@ function lessonBtn(s) {
     `;
   }
 
-  const playable = isPlayableMedia(s.link);
-  if (playable) {
+  /*
+   * Vídeos do Drive: abrem DIRETO no Google Drive (evita 2 barras do embutido).
+   * Aulas locais (.mp4 na pasta videos/): player dentro da área.
+   */
+  if (isPlayableDriveLink(s.link)) {
+    const href = toDriveWatchUrl(s.link);
+    return `
+      <a class="lesson-btn" href="${escapeAttr(href)}" target="_blank" rel="noopener">
+        <span class="lesson-n">${s.n}</span>
+        <span class="name">${escapeHtml(s.title)}</span>
+        <span class="play">▶</span>
+      </a>
+    `;
+  }
+
+  if (isLocalVideo(s.link)) {
     return `
       <button
         type="button"
@@ -935,8 +956,9 @@ function lessonBtn(s) {
       </button>
     `;
   }
+
   return `
-    <a class="lesson-btn" href="${s.link}" target="_blank" rel="noopener">
+    <a class="lesson-btn" href="${escapeAttr(s.link)}" target="_blank" rel="noopener">
       <span class="lesson-n">${s.n}</span>
       <span class="name">${escapeHtml(s.title)}</span>
       <span class="play">▶</span>
@@ -945,6 +967,7 @@ function lessonBtn(s) {
 }
 
 function bindLessonPlayers(root) {
+  /* Só aulas locais ainda usam o player interno */
   root.querySelectorAll("[data-play-url]").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
