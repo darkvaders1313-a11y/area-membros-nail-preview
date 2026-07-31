@@ -904,7 +904,6 @@ const MODULES = {
     "phase": 1,
     "level": "Rápido",
     "link": "https://drive.google.com/file/d/1PhqldldHPKjlSHK3Vamlo0v22Ixlthcd/view?usp=drive_link",
-        "type": "pdf",
     "whatYouGet": "Modelo de ficha de anamnese para atendimento.",
     "startHere": "Abra o arquivo e use no próximo atendimento.",
     "sessions": [

@@ -775,6 +775,10 @@ function viewCurso(id) {
   }
 
   const lessons = m.sessions.map(lessonBtn).join("");
+  const allPdf = m.sessions.length && m.sessions.every(isPdfSession);
+  const headSub = allPdf
+    ? `${m.sessions.length} arquivo${m.sessions.length > 1 ? "s" : ""} PDF · toque em Baixar`
+    : `${m.sessions.length} aula${m.sessions.length > 1 ? "s" : ""} · clique e assista aqui`;
 
   const startTip =
     id === START_MODULE_ID
@@ -786,7 +790,7 @@ function viewCurso(id) {
       ${backBtn("#/", "Todas as aulas")}
       <div class="page-head">
         <h1>${escapeHtml(m.title)}</h1>
-        <p>${m.sessions.length} aula${m.sessions.length > 1 ? "s" : ""} · clique e assista aqui</p>
+        <p>${headSub}</p>
       </div>
       <div class="tip">
         <strong>Por onde começar</strong>
