@@ -450,8 +450,8 @@ const MODULES = {
     "tag": "Base",
     "phase": 1,
     "level": "Essencial",
-    "time": "3 aulas",
-    "startHere": "Comece por 'Erros na manicure com lixa elétrica'. Depois pratique em si mesma e em cliente.",
+    "time": "4 aulas",
+    "startHere": "Comece por 'Erros na manicure com lixa elétrica'. Depois pratique em si mesma, em cliente e a combinação com alicate e francesinha.",
     "link": "https://drive.google.com/drive/folders/1ZZtcDyetubNQaEpbNLE9_Pk_1gceTVyc?usp=drive_link",
     "whatYouGet": "Cutilagem limpa, cutícula saudável e acabamento premium.",
     "sessions": [
@@ -472,6 +472,13 @@ const MODULES = {
         "title": "Fazendo em cliente",
         "focus": "Aplicação em cliente real.",
         "link": "https://drive.google.com/file/d/1W7sO4ftCABxveiXOGi6O4G0FSHuPj3zY/view?usp=drive_link"
+      },
+      {
+        "n": 4,
+        "title": "Cutilagem Russa combina com alicate e francesinha",
+        "focus": "Combinação de técnicas: cutilagem russa, alicate e francesinha.",
+        "link": "videos/cutilagem-russa-alicate-francesinha.mp4",
+        "local": true
       }
     ]
   },

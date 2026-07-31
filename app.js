@@ -401,6 +401,21 @@ function isPlayableDriveLink(url) {
   return Boolean(extractDriveFileId(url));
 }
 
+function isLocalVideo(url) {
+  if (!url) return false;
+  const u = String(url);
+  return (
+    u.startsWith("videos/") ||
+    u.startsWith("./videos/") ||
+    u.startsWith("/videos/") ||
+    /\.(mp4|webm|ogg|m4v)(\?|#|$)/i.test(u)
+  );
+}
+
+function isPlayableMedia(url) {
+  return isPlayableDriveLink(url) || isLocalVideo(url);
+}
+
 function toDrivePreviewUrl(url) {
   const id = extractDriveFileId(url);
   if (!id) return null;
@@ -462,7 +477,7 @@ function ensurePlayerShell() {
       </div>
       <div class="video-player-actions">
         <a id="videoPlayerExternal" class="btn btn-light btn-sm" href="#" target="_blank" rel="noopener">
-          Abrir no Drive
+          Abrir em nova aba
         </a>
         <button type="button" class="btn btn-primary btn-sm" data-close-player>Fechar</button>
       </div>
@@ -515,14 +530,11 @@ function useIframePlayer(previewUrl) {
   showHintSoon();
 }
 
-function tryNativeThenIframe(url) {
+function playNativeVideo(src, { fallbackPreview } = {}) {
   const native = document.getElementById("videoPlayerNative");
   const frame = document.getElementById("videoPlayerFrame");
-  const candidates = toDriveStreamCandidates(url);
-  const preview = toDrivePreviewUrl(url);
-
-  if (!native || !candidates.length) {
-    useIframePlayer(preview);
+  if (!native) {
+    if (fallbackPreview) useIframePlayer(fallbackPreview);
     return;
   }
 
@@ -531,6 +543,51 @@ function tryNativeThenIframe(url) {
     frame.src = "about:blank";
   }
   native.hidden = false;
+
+  let settled = false;
+  const onReady = () => {
+    if (settled) return;
+    settled = true;
+    hideLoading();
+    if (playerHintTimer) {
+      clearTimeout(playerHintTimer);
+      playerHintTimer = null;
+    }
+    const hint = document.getElementById("videoPlayerHint");
+    if (hint) hint.hidden = true;
+    native.play().catch(() => {});
+  };
+
+  native.onloadeddata = onReady;
+  native.oncanplay = onReady;
+  native.onerror = () => {
+    if (settled) return;
+    settled = true;
+    if (fallbackPreview) useIframePlayer(fallbackPreview);
+    else {
+      hideLoading();
+      const hint = document.getElementById("videoPlayerHint");
+      if (hint) {
+        hint.hidden = false;
+        hint.innerHTML =
+          "<p>Não foi possível carregar este vídeo. Tente abrir em nova aba.</p>";
+      }
+    }
+  };
+
+  native.src = src;
+  native.load();
+}
+
+function tryNativeThenIframe(url) {
+  const candidates = toDriveStreamCandidates(url);
+  const preview = toDrivePreviewUrl(url);
+  const native = document.getElementById("videoPlayerNative");
+
+  if (!native || !candidates.length) {
+    if (preview) useIframePlayer(preview);
+    return;
+  }
 
   let idx = 0;
   let settled = false;
@@ -544,9 +601,14 @@ function tryNativeThenIframe(url) {
       return;
     }
     settled = true;
-    /* stream direto falhou → cai no player embutido do Google */
     useIframePlayer(preview);
   };
+
+  if (document.getElementById("videoPlayerFrame")) {
+    document.getElementById("videoPlayerFrame").hidden = true;
+    document.getElementById("videoPlayerFrame").src = "about:blank";
+  }
+  native.hidden = false;
 
   const onReady = () => {
     if (settled) return;
@@ -565,7 +627,6 @@ function tryNativeThenIframe(url) {
   native.oncanplay = onReady;
   native.onerror = failToNext;
 
-  /* se em ~2.5s não começou, tenta próximo / iframe */
   setTimeout(() => {
     if (!settled && native.readyState < 2) failToNext();
   }, 2500);
@@ -576,7 +637,7 @@ function tryNativeThenIframe(url) {
 
 function openPlayer(title, url) {
   ensurePlayerShell();
-  if (!isPlayableDriveLink(url)) {
+  if (!isPlayableMedia(url)) {
     window.open(url, "_blank", "noopener");
     return;
   }
@@ -589,14 +650,23 @@ function openPlayer(title, url) {
 
   titleEl.textContent = title || "Aula";
   external.href = url;
-  if (hint) hint.hidden = true;
+  external.textContent = isLocalVideo(url) ? "Abrir em nova aba" : "Abrir no Drive";
+  if (hint) {
+    hint.hidden = true;
+    hint.innerHTML =
+      "<p>Se o vídeo não aparecer aqui, o Google pode estar bloqueando o embutido. Use <strong>Abrir no Drive</strong> — a área de membros continua aberta atrás.</p>";
+  }
   if (loading) loading.hidden = false;
 
   shell.hidden = false;
   document.body.classList.add("player-open");
   requestAnimationFrame(() => shell.classList.add("show"));
 
-  tryNativeThenIframe(url);
+  if (isLocalVideo(url)) {
+    playNativeVideo(url);
+  } else {
+    tryNativeThenIframe(url);
+  }
 }
 
 function closePlayer() {
@@ -631,7 +701,7 @@ function closePlayer() {
 }
 
 function lessonBtn(s) {
-  const playable = isPlayableDriveLink(s.link);
+  const playable = isPlayableMedia(s.link);
   if (playable) {
     return `
       <button
