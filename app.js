@@ -43,6 +43,48 @@ const MODULE_ICONS = {
   25: "🤝",
 };
 
+/* Miniaturas 3D geradas (mockup de vídeo) */
+function thumbForModule(id) {
+  return `thumbs/m-${id}.jpg`;
+}
+function thumbForTool(id) {
+  return `thumbs/tool-${id}.jpg`;
+}
+/* datas decorativas no estilo da referência (dia.mês) */
+const THUMB_DATES = {
+  1: "01.base",
+  16: "02.base",
+  25: "03.base",
+  22: "04.base",
+  13: "05.base",
+  18: "06.fmt",
+  19: "07.fmt",
+  21: "08.fmt",
+  4: "09.gel",
+  3: "10.gel",
+  2: "11.gel",
+  7: "12.alo",
+  8: "13.alo",
+  6: "14.alo",
+  11: "15.alo",
+  5: "16.art",
+  12: "17.art",
+  20: "18.art",
+  24: "19.neg",
+  17: "20.neg",
+  10: "21.neg",
+  9: "22.neg",
+  15: "23.bns",
+  14: "24.bns",
+  23: "25.bns",
+  cilios: "cílios",
+  cert: "tool",
+  preco: "tool",
+  legendas: "tool",
+  brocas: "tool",
+  sim: "tool",
+};
+
 const FILTER_ORDER = [
   "todas",
   "base",
@@ -107,6 +149,8 @@ function buildFeed() {
       color: meta.color,
       grad: id === START_MODULE_ID ? "g-featured" : meta.grad,
       icon: MODULE_ICONS[id] || meta.icon,
+      thumbSrc: thumbForModule(id),
+      thumbDate: THUMB_DATES[id] || "",
       featured: id === START_MODULE_ID,
       lessons: n,
       metaLine: `${n} aula${n === 1 ? "" : "s"} · ${m.tag || meta.label} · passo ${
@@ -129,6 +173,8 @@ function buildFeed() {
     color: CAT_META.cilios.color,
     grad: "g-cilios",
     icon: "👁️",
+    thumbSrc: "thumbs/cilios.jpg",
+    thumbDate: THUMB_DATES.cilios,
     featured: false,
     lessons: (CILIOS.sessions && CILIOS.sessions.length) || 0,
     metaLine: `${CILIOS.sessions.length} aulas · 4 técnicas · trilha cílios`,
@@ -150,6 +196,8 @@ function buildFeed() {
       color: CAT_META.tools.color,
       grad: "g-tools",
       icon: t.icon || "🛠️",
+      thumbSrc: thumbForTool(t.id),
+      thumbDate: THUMB_DATES[t.id] || "tool",
       featured: false,
       lessons: 0,
       metaLine: `ferramenta · abrir`,
@@ -294,16 +342,21 @@ function renderCard(item, isFeaturedSlot) {
       ? `<span class="extra-badge">📦 ${item.lessons}</span>`
       : "";
 
-  const thumbText = item.featured
-    ? `<div class="thumb-title thumb-title-featured">cutilagem russa</div>`
-    : `<div class="thumb-title">${escapeHtml(item.thumbLabel)}</div>`;
+  const label = item.featured ? "cutilagem russa" : item.thumbLabel;
+  const date = item.thumbDate || "";
+  const img = item.thumbSrc
+    ? `<img class="thumb-img" src="${escapeAttr(item.thumbSrc)}" alt="" loading="lazy" />`
+    : `<span class="thumb-icon" aria-hidden="true">${item.icon}</span>`;
 
   return `
     <a class="lesson-card ${featuredClass}" href="${item.href}"${target}>
-      <div class="thumb ${item.grad}">
+      <div class="thumb ${item.grad} has-img">
         ${badge}
-        ${thumbText}
-        <span class="thumb-icon" aria-hidden="true">${item.icon}</span>
+        ${img}
+        <div class="thumb-overlay">
+          <div class="thumb-title${item.featured ? " thumb-title-featured" : ""}">${escapeHtml(label)}</div>
+          ${date ? `<div class="thumb-date">${escapeHtml(date)}</div>` : ""}
+        </div>
       </div>
       <div class="body">
         <div class="cat-row">

@@ -258,7 +258,38 @@ button {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  padding: 0;
+}
+
+.lesson-card .thumb.has-img {
+  padding: 0;
+}
+
+.lesson-card .thumb-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center right;
+  z-index: 0;
+}
+
+.lesson-card .thumb-overlay {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 108px;
   padding: 0.65rem 0.7rem;
+  background: linear-gradient(
+    105deg,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.35) 42%,
+    rgba(0, 0, 0, 0.08) 70%,
+    transparent 100%
+  );
 }
 
 .lesson-card .thumb-title {
@@ -266,13 +297,13 @@ button {
   font-weight: 700;
   line-height: 1.25;
   color: #fff;
-  max-width: 70%;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+  max-width: 62%;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
 }
 
 .lesson-card .thumb-title-featured {
-  margin-top: 1.55rem;
-  max-width: 62%;
+  margin-top: 1.45rem;
+  max-width: 58%;
   font-size: 0.72rem;
 }
 
@@ -284,6 +315,7 @@ button {
   line-height: 1;
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
   user-select: none;
+  z-index: 1;
 }
 
 .lesson-card .thumb-badge {
@@ -298,16 +330,15 @@ button {
   text-transform: uppercase;
   padding: 0.28rem 0.45rem;
   border-radius: 8px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .lesson-card .thumb-date {
   font-size: 0.72rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9);
   margin-top: auto;
-  position: relative;
-  z-index: 1;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
 }
 
 .lesson-card .body {
