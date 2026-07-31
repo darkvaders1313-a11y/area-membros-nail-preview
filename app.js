@@ -768,10 +768,6 @@ function viewCurso(id) {
       <div class="lesson-list">
         ${lessons}
       </div>
-      <div class="spacer"></div>
-      <div class="stack">
-        <a class="btn btn-light btn-sm" href="${m.link}" target="_blank" rel="noopener">Abrir pasta inteira no Drive</a>
-      </div>
     </div>
   `;
 }
@@ -802,8 +798,6 @@ function viewCilios() {
         1º Clássico Fio a Fio → 2º Europeu 4D → 3º Volume Brasileiro → 4º Remoção.
       </div>
       ${listHtml}
-      <div class="spacer"></div>
-      <a class="btn btn-light btn-sm" href="${CILIOS.folder}" target="_blank" rel="noopener">Abrir pasta inteira no Drive</a>
     </div>
   `;
 }
