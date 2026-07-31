@@ -524,6 +524,14 @@ function ensurePlayerShell() {
   frame.addEventListener("load", () => {
     const loading = document.getElementById("videoPlayerLoading");
     if (loading && !frame.hidden) loading.hidden = true;
+    /* iframe carregou: tira qualquer aviso do meio da tela */
+    if (!frame.hidden && frame.src && frame.src !== "about:blank") {
+      if (playerHintTimer) {
+        clearTimeout(playerHintTimer);
+        playerHintTimer = null;
+      }
+      setPlayerHint("", { show: false });
+    }
   });
 }
 
@@ -557,17 +565,19 @@ function setPlayerHint(html, { show = true, driveUrl = null } = {}) {
 function showHintSoon(driveUrl, delayMs = 2800) {
   const shell = document.getElementById("videoPlayer");
   if (playerHintTimer) clearTimeout(playerHintTimer);
+  /* delayMs <= 0: não mostra overlay no meio do vídeo */
+  if (!driveUrl || delayMs <= 0) return;
   playerHintTimer = setTimeout(() => {
     if (shell && shell.classList.contains("show")) {
       setPlayerHint(
-        "Se a tela ficou preta, o celular bloqueou o vídeo embutido. Toque em <strong>Assistir no Drive</strong>.",
+        "Se a tela ficou preta, o celular bloqueou o vídeo embutido. Toque em <strong>Assistir no Drive</strong> embaixo.",
         { show: true, driveUrl }
       );
     }
   }, delayMs);
 }
 
-function useIframePlayer(previewUrl, { driveUrl = null, showHintMs = 2800 } = {}) {
+function useIframePlayer(previewUrl, { driveUrl = null, showHintMs = 0 } = {}) {
   const frame = document.getElementById("videoPlayerFrame");
   const native = document.getElementById("videoPlayerNative");
   if (native) {
@@ -576,6 +586,8 @@ function useIframePlayer(previewUrl, { driveUrl = null, showHintMs = 2800 } = {}
     native.load();
     native.hidden = true;
   }
+  /* limpa aviso do meio — o botão de baixo já basta */
+  setPlayerHint("", { show: false });
   if (frame) {
     frame.hidden = false;
     frame.src = "about:blank";
@@ -583,7 +595,8 @@ function useIframePlayer(previewUrl, { driveUrl = null, showHintMs = 2800 } = {}
       frame.src = previewUrl;
     });
   }
-  if (driveUrl) showHintSoon(driveUrl, showHintMs);
+  /* só agenda overlay se pedir delay > 0 (casos de falha) */
+  if (driveUrl && showHintMs > 0) showHintSoon(driveUrl, showHintMs);
 }
 
 function playNativeVideo(src, { fallbackDriveUrl = null } = {}) {
@@ -671,8 +684,8 @@ function tryNativeThenIframe(url) {
    */
   if (mobile) {
     if (preview) {
-      useIframePlayer(preview, { driveUrl: url, showHintMs: 1200 });
-      /* esconde loading um pouco depois mesmo se iframe não “loadar” bem */
+      /* sem overlay no meio — botões de baixo (Assistir no Drive / Fechar) já resolvem */
+      useIframePlayer(preview, { driveUrl: url, showHintMs: 0 });
       setTimeout(hideLoading, 1600);
     } else {
       hideLoading();
@@ -772,19 +785,8 @@ function openPlayer(title, url) {
 
   if (local) {
     playNativeVideo(url);
-  } else if (mobile) {
-    /*
-     * Estratégia mobile Drive:
-     * 1) tenta preview embutido
-     * 2) mostra atalho grande cedo (evita “tela preta sem saída”)
-     * Não força abrir aba sozinho (alguns bloqueiam popup).
-     */
-    tryNativeThenIframe(url);
-    setPlayerHint(
-      "No celular o Google Drive às vezes fica preto dentro do site. Se isso acontecer, toque em <strong>Assistir no Drive</strong>.",
-      { show: true, driveUrl: url }
-    );
   } else {
+    /* mobile e desktop: sem cartão no meio do vídeo; atalho fica só embaixo */
     tryNativeThenIframe(url);
   }
 }
